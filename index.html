@@ -1,29 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cute Services Reseller Portal</title>
-  <link rel="stylesheet" href="assets/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cute Services Reseller Portal</title>
+    <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-  <header>
-    <div class="container">
-      <h1>Cute Services Reseller Portal</h1>
-      <nav>
-        <a href="index.html">Home</a>
-      </nav>
-    </div>
-  </header>
-  <main>
-    <section>
-      <h2>Welcome Resellers!</h2>
-      <p>Use this portal to submit new orders, upload screenshots and relevant information, chat with staff, and view the status of your orders.</p>
-      <p>Reseller owners can invite team members, manage their team, and view daily balances with revenue breakdowns. Feel free to explore the features and let us know if you have any questions.</p>
-    </section>
-  </main>
-  <footer>
-    <p>&copy; 2025 Cute Services. All rights reserved.</p>
-  </footer>
+    <header>
+        <h1>Cute Services Reseller Portal</h1>
+        <nav>
+            <a href="https://princeprey.github.io/cute-services-owner/">Owner Portal</a>
+            <a href="https://princeprey.github.io/cute-services-staff/">Staff Portal</a>
+            <a href="https://princeprey.github.io/cute-services-reseller/">Reseller Portal</a>
+        </nav>
+    </header>
+    <main>
+        <h2>Create a New Order</h2>
+        <div class="order-form">
+            <label for="orderCategory">Category:</label>
+            <select id="orderCategory">
+                <option value="Chipotle">Chipotle</option>
+                <option value="Food websites">Food websites</option>
+                <option value="Movies">Movies</option>
+                <option value="Flights">Flights</option>
+                <option value="Activities">Activities</option>
+                <option value="Other">Other</option>
+            </select>
+            <br>
+            <label for="orderDescription">Description:</label>
+            <textarea id="orderDescription" rows="3"></textarea>
+            <br>
+            <label>
+                <input type="checkbox" id="infoInScreenshot"> All info in screenshot
+            </label>
+            <br>
+            <button onclick="createOrder()">Submit Order</button>
+        </div>
+        <h2>Your Orders</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="orderList"></tbody>
+        </table>
+    </main>
+    <footer>
+        &copy; 2025 Cute Services. All rights reserved.
+    </footer>
+    <script>
+        function loadOrders() {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const list = document.getElementById('orderList');
+            list.innerHTML = '';
+            orders.forEach(order => {
+                const row = document.createElement('tr');
+                let statusClass = '';
+                if (order.status === 'New') statusClass = 'order-status-new';
+                else if (order.status === 'In Progress') statusClass = 'order-status-assigned';
+                else if (order.status === 'Completed') statusClass = 'order-status-completed';
+                row.innerHTML =
+                    '<td>' + order.id + '</td>' +
+                    '<td>' + (order.category || '') + '</td>' +
+                    '<td>' + (order.description || '') + '</td>' +
+                    '<td class="' + statusClass + '">' + order.status + '</td>';
+                list.appendChild(row);
+            });
+        }
+        function createOrder() {
+            const category = document.getElementById('orderCategory').value;
+            const description = document.getElementById('orderDescription').value;
+            const infoInScreenshot = document.getElementById('infoInScreenshot').checked;
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const id = Date.now();
+            const order = {
+                id: id,
+                category: category,
+                description: description,
+                infoInScreenshot: infoInScreenshot,
+                status: 'New'
+            };
+            orders.push(order);
+            localStorage.setItem('orders', JSON.stringify(orders));
+            // reset form
+            document.getElementById('orderDescription').value = '';
+            document.getElementById('infoInScreenshot').checked = false;
+            loadOrders();
+        }
+        window.onload = loadOrders;
+    </script>
 </body>
 </html>
