@@ -1,98 +1,131 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cute Services Reseller Portal</title>
-    <link rel="stylesheet" href="assets/style.css">
+  <meta charset="UTF-8">
+  <title>Cute Services – Reseller Portal</title>
+  <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-    <header>
-        <h1>Cute Services Reseller Portal</h1>
-        <nav>
-            <a href="https://princeprey.github.io/cute-services-owner/">Owner Portal</a>
-            <a href="https://princeprey.github.io/cute-services-staff/">Staff Portal</a>
-            <a href="https://princeprey.github.io/cute-services-reseller/">Reseller Portal</a>
-        </nav>
-    </header>
-    <main>
-        <h2>Create a New Order</h2>
-        <div class="order-form">
-            <label for="orderCategory">Category:</label>
-            <select id="orderCategory">
-                <option value="Chipotle">Chipotle</option>
-                <option value="Food websites">Food websites</option>
-                <option value="Movies">Movies</option>
-                <option value="Flights">Flights</option>
-                <option value="Activities">Activities</option>
-                <option value="Other">Other</option>
-            </select>
-            <br>
-            <label for="orderDescription">Description:</label>
-            <textarea id="orderDescription" rows="3"></textarea>
-            <br>
-            <label>
-                <input type="checkbox" id="infoInScreenshot"> All info in screenshot
-            </label>
-            <br>
-            <button onclick="createOrder()">Submit Order</button>
+  <header>
+    <h1>Cute Services Reseller Portal</h1>
+  </header>
+  <div class="container">
+    <div class="card">
+      <h2>Create New Order</h2>
+      <form id="order-form">
+        <div class="form-group">
+          <label for="category">Category</label>
+          <select id="category">
+            <option value="Chipotle">Chipotle (30%)</option>
+            <option value="Food">Food websites</option>
+            <option value="Movies">Movies</option>
+            <option value="Flights">Flights</option>
+            <option value="Activities">Activities</option>
+            <option value="Other">Other</option>
+          </select>
         </div>
-        <h2>Your Orders</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Category</th>
-                    <th>Description</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="orderList"></tbody>
-        </table>
-    </main>
-    <footer>
-        &copy; 2025 Cute Services. All rights reserved.
-    </footer>
-    <script>
-        function loadOrders() {
-            const orders = JSON.parse(localStorage.getItem('orders')) || [];
-            const list = document.getElementById('orderList');
-            list.innerHTML = '';
-            orders.forEach(order => {
-                const row = document.createElement('tr');
-                let statusClass = '';
-                if (order.status === 'New') statusClass = 'order-status-new';
-                else if (order.status === 'In Progress') statusClass = 'order-status-assigned';
-                else if (order.status === 'Completed') statusClass = 'order-status-completed';
-                row.innerHTML =
-                    '<td>' + order.id + '</td>' +
-                    '<td>' + (order.category || '') + '</td>' +
-                    '<td>' + (order.description || '') + '</td>' +
-                    '<td class="' + statusClass + '">' + order.status + '</td>';
-                list.appendChild(row);
-            });
+        <div class="form-group">
+          <label for="value">Order Value (USD)</label>
+          <input type="number" id="value" step="0.01" placeholder="e.g. 60">
+        </div>
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea id="description" rows="3" placeholder="Add any notes"></textarea>
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="infoInScreenshot"> All information in screenshot</label>
+        </div>
+        <div class="form-group">
+          <label for="attachments">Attach Screenshots (max 10)</label>
+          <input type="file" id="attachments" multiple>
+        </div>
+        <button type="button" onclick="createOrder()">Submit Order</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Your Orders</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Category</th>
+            <th>Value</th>
+            <th>Status</th>
+            <th>Attachments</th>
+          </tr>
+        </thead>
+        <tbody id="orders-body">
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+    function loadOrders() {
+      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+      const tbody = document.getElementById('orders-body');
+      tbody.innerHTML = '';
+      orders.forEach(order => {
+        const tr = document.createElement('tr');
+        const statusClass = order.status.replace(/\s+/g, '-').toLowerCase();
+        tr.innerHTML =
+          '<td>' + order.id + '</td>' +
+          '<td>' + order.category + '</td>' +
+          '<td>$' + order.value.toFixed(2) + '</td>' +
+          '<td class="' + statusClass + '">' + order.status + '</td>' +
+          '<td>' + order.attachments.length + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+    function createOrder() {
+      const category = document.getElementById('category').value;
+      const value = parseFloat(document.getElementById('value').value) || 0;
+      const description = document.getElementById('description').value.trim();
+      const infoInScreenshot = document.getElementById('infoInScreenshot').checked;
+      const fileInput = document.getElementById('attachments');
+      const files = fileInput.files;
+      if (files.length > 10) {
+        alert('You can upload up to 10 screenshots.');
+        return;
+      }
+      let attachments = [];
+      if (files.length > 0) {
+        let loaded = 0;
+        for (let i = 0; i < files.length; i++) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            attachments.push(e.target.result);
+            loaded++;
+            if (loaded === files.length) {
+              saveOrder(category, value, description, infoInScreenshot, attachments);
+            }
+          };
+          reader.readAsDataURL(files[i]);
         }
-        function createOrder() {
-            const category = document.getElementById('orderCategory').value;
-            const description = document.getElementById('orderDescription').value;
-            const infoInScreenshot = document.getElementById('infoInScreenshot').checked;
-            const orders = JSON.parse(localStorage.getItem('orders')) || [];
-            const id = Date.now();
-            const order = {
-                id: id,
-                category: category,
-                description: description,
-                infoInScreenshot: infoInScreenshot,
-                status: 'New'
-            };
-            orders.push(order);
-            localStorage.setItem('orders', JSON.stringify(orders));
-            // reset form
-            document.getElementById('orderDescription').value = '';
-            document.getElementById('infoInScreenshot').checked = false;
-            loadOrders();
-        }
-        window.onload = loadOrders;
-    </script>
+      } else {
+        saveOrder(category, value, description, infoInScreenshot, attachments);
+      }
+    }
+    function saveOrder(category, value, description, infoInScreenshot, attachments) {
+      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+      const nextId = orders.length > 0 ? Math.max(...orders.map(o => o.id)) + 1 : 1;
+      orders.push({
+        id: nextId,
+        category: category,
+        value: value,
+        description: description,
+        infoInScreenshot: infoInScreenshot,
+        attachments: attachments,
+        status: 'New',
+        assignedTo: null,
+        nameOnOrder: '',
+        proofAttachments: [],
+        proofValue: 0
+      });
+      localStorage.setItem('orders', JSON.stringify(orders));
+      document.getElementById('order-form').reset();
+      loadOrders();
+    }
+    document.addEventListener('DOMContentLoaded', loadOrders);
+  </script>
 </body>
 </html>
